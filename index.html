@@ -77,6 +77,57 @@
                 <div class="balance-subtitle">This month</div>
             </div>
         </section>
+
+        <!-- Charts and Transactions Section -->
+        <section class="content-grid">
+            <!-- Charts Section -->
+            <div class="charts-section">
+                <div class="chart-card">
+                    <h3 class="chart-title">Expense Breakdown</h3>
+                    <div class="chart-container">
+                        <canvas id="expenseChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3 class="chart-title">Income vs Expenses</h3>
+                    <div class="chart-container">
+                        <canvas id="incomeExpenseChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transactions Section -->
+            <div class="transactions-section">
+                <div class="transactions-header">
+                    <h3 class="section-title">Recent Transactions</h3>
+                    <button class="add-btn" id="addTransactionBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 5V19M5 12H19" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        Add Transaction
+                    </button>
+                </div>
+
+                <!-- Filter Buttons -->
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all">All</button>
+                    <button class="filter-btn" data-filter="income">Income</button>
+                    <button class="filter-btn" data-filter="expense">Expense</button>
+                </div>
+
+                <!-- Transaction List -->
+                <div class="transaction-list" id="transactionList">
+                    <div class="empty-state">
+                        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 5 17 5H15" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"/>
+                            <path d="M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5V7H9V5Z" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <p>No transactions yet</p>
+                        <p class="empty-subtitle">Add your first transaction to get started</p>
+                    </div>
+                </div>
+            </div>
+        </section>
     </main>
 
     <script src="script.js"></script>
