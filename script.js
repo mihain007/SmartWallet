@@ -76,9 +76,47 @@
         return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
     }
 
+    // ---------- Form data extraction ----------
+    function readTransactionForm(form) {
+        const description = form.querySelector('#description').value.trim();
+        const amount = parseFloat(form.querySelector('#amount').value);
+        const category = form.querySelector('#category').value;
+        const typeInput = form.querySelector('input[name="type"]:checked');
+        const type = typeInput ? typeInput.value : 'expense';
+
+        const errors = [];
+        if (!description) errors.push('Description is required');
+        if (!Number.isFinite(amount) || amount <= 0) errors.push('Amount must be greater than zero');
+        if (!category) errors.push('Category is required');
+        if (type !== 'income' && type !== 'expense') errors.push('Type is invalid');
+
+        return {
+            valid: errors.length === 0,
+            errors,
+            data: {
+                id: generateId(),
+                description,
+                amount,
+                category,
+                date: new Date().toISOString().slice(0, 10),
+                type,
+                createdAt: new Date().toISOString()
+            }
+        };
+    }
+
+    // ---------- Transaction CRUD ----------
+    function addTransaction(tx) {
+        state.transactions.unshift(tx);
+        saveTransactions();
+        renderAll();
+    }
+
     // ---------- Modal ----------
     function openModal() {
-        document.getElementById('transactionModal').classList.add('active');
+        const modal = document.getElementById('transactionModal');
+        modal.classList.add('active');
+        setTimeout(() => document.getElementById('description')?.focus(), 50);
     }
 
     function closeModal() {
@@ -95,6 +133,25 @@
     function bindEvents() {
         document.getElementById('addTransactionBtn').addEventListener('click', openModal);
         document.getElementById('closeModal').addEventListener('click', closeModal);
+
+        document.getElementById('transactionModal').addEventListener('click', (e) => {
+            if (e.target.id === 'transactionModal') closeModal();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        document.getElementById('transactionForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const result = readTransactionForm(e.currentTarget);
+            if (!result.valid) {
+                alert(result.errors[0]);
+                return;
+            }
+            addTransaction(result.data);
+            closeModal();
+        });
     }
 
     // ---------- Bootstrap ----------
