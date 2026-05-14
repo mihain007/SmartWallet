@@ -112,6 +112,85 @@
         renderAll();
     }
 
+    // ---------- Calculations ----------
+    function computeTotals() {
+        let income = 0;
+        let expenses = 0;
+        for (const tx of state.transactions) {
+            if (tx.type === 'income') income += tx.amount;
+            else if (tx.type === 'expense') expenses += tx.amount;
+        }
+        return {
+            income,
+            expenses,
+            balance: income - expenses
+        };
+    }
+
+    // ---------- Filtering ----------
+    function getFilteredTransactions() {
+        if (state.filter === 'all') return state.transactions;
+        return state.transactions.filter(tx => tx.type === state.filter);
+    }
+
+    // ---------- Rendering: balance cards ----------
+    function renderBalances() {
+        const { income, expenses, balance } = computeTotals();
+        document.getElementById('totalBalance').textContent = formatCurrency(balance);
+        document.getElementById('totalIncome').textContent = formatCurrency(income);
+        document.getElementById('totalExpenses').textContent = formatCurrency(expenses);
+
+        const balanceEl = document.getElementById('totalBalance');
+        balanceEl.style.color = balance < 0 ? '#fecaca' : '';
+    }
+
+    // ---------- Rendering: transactions list ----------
+    function renderTransactions() {
+        const list = document.getElementById('transactionList');
+        const items = getFilteredTransactions();
+
+        if (items.length === 0) {
+            list.innerHTML = `
+                <div class="empty-state">
+                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 5H7C5.89543 5 5 5.89543 5 7V19C5 20.1046 5.89543 21 7 21H17C18.1046 21 19 20.1046 19 19V7C19 5.89543 18.1046 5 17 5H15" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"/>
+                        <path d="M9 5C9 3.89543 9.89543 3 11 3H13C14.1046 3 15 3.89543 15 5V7H9V5Z" stroke="#9ca3af" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <p>No transactions yet</p>
+                    <p class="empty-subtitle">Add your first transaction to get started</p>
+                </div>
+            `;
+            return;
+        }
+
+        const sorted = items.slice().sort((a, b) => {
+            const da = new Date(a.date).getTime();
+            const db = new Date(b.date).getTime();
+            if (db !== da) return db - da;
+            return (b.createdAt || '').localeCompare(a.createdAt || '');
+        });
+
+        list.innerHTML = sorted.map(renderTransactionItem).join('');
+    }
+
+    function renderTransactionItem(tx) {
+        const meta = CATEGORY_META[tx.category] || CATEGORY_META.other;
+        const icon = CATEGORY_ICONS[tx.category] || CATEGORY_ICONS.other;
+        const sign = tx.type === 'income' ? '+' : '-';
+        return `
+            <div class="transaction-item" data-id="${tx.id}">
+                <div class="transaction-info">
+                    <div class="transaction-icon ${tx.type}">${icon}</div>
+                    <div class="transaction-details">
+                        <h4>${tx.description}</h4>
+                        <p>${meta.label} · ${formatDate(tx.date)}</p>
+                    </div>
+                </div>
+                <span class="transaction-amount ${tx.type}">${sign}${formatCurrency(tx.amount).replace('-', '')}</span>
+            </div>
+        `;
+    }
+
     // ---------- Modal ----------
     function openModal() {
         const modal = document.getElementById('transactionModal');
@@ -126,7 +205,8 @@
 
     // ---------- Top-level render ----------
     function renderAll() {
-        // populated in upcoming commits
+        renderBalances();
+        renderTransactions();
     }
 
     // ---------- Event binding ----------
@@ -151,6 +231,15 @@
             }
             addTransaction(result.data);
             closeModal();
+        });
+    
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                state.filter = btn.getAttribute('data-filter') || 'all';
+                renderTransactions();
+            });
         });
     }
 
