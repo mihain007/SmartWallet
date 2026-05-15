@@ -112,6 +112,14 @@
         renderAll();
     }
 
+    function deleteTransaction(id) {
+        const idx = state.transactions.findIndex(t => t.id === id);
+        if (idx === -1) return;
+        state.transactions.splice(idx, 1);
+        saveTransactions();
+        renderAll();
+    }
+
     // ---------- Calculations ----------
     function computeTotals() {
         let income = 0;
@@ -171,6 +179,15 @@
         });
 
         list.innerHTML = sorted.map(renderTransactionItem).join('');
+
+        list.querySelectorAll('[data-delete-id]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.getAttribute('data-delete-id');
+                if (confirm('Delete this transaction?')) {
+                    deleteTransaction(id);
+                }
+            });
+        });
     }
 
     function renderTransactionItem(tx) {
@@ -186,7 +203,14 @@
                         <p>${meta.label} · ${formatDate(tx.date)}</p>
                     </div>
                 </div>
-                <span class="transaction-amount ${tx.type}">${sign}${formatCurrency(tx.amount).replace('-', '')}</span>
+                <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <span class="transaction-amount ${tx.type}">${sign}${formatCurrency(tx.amount).replace('-', '')}</span>
+                    <button class="delete-btn" data-delete-id="${tx.id}" aria-label="Delete transaction">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M3 6H21M8 6V4C8 3.44772 8.44772 3 9 3H15C15.5523 3 16 3.44772 16 4V6M19 6V20C19 20.5523 18.5523 21 18 21H6C5.44772 21 5 20.5523 5 20V6H19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                </div>
             </div>
         `;
     }
