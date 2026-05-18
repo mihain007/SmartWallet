@@ -185,6 +185,7 @@
                 const id = btn.getAttribute('data-delete-id');
                 if (confirm('Delete this transaction?')) {
                     deleteTransaction(id);
+                    showToast('Transaction deleted', 'success');
                 }
             });
         });
@@ -213,6 +214,18 @@
                 </div>
             </div>
         `;
+    }
+
+    // ---------- Toast notifications ----------
+    let toastTimer = null;
+    function showToast(message, variant = 'success') {
+        const toast = document.getElementById('toast');
+        if (!toast) return;
+        toast.textContent = message;
+        toast.classList.remove('success', 'error');
+        toast.classList.add(variant, 'show');
+        if (toastTimer) clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove('show'), 2400);
     }
 
     // ---------- Modal ----------
@@ -250,11 +263,12 @@
             e.preventDefault();
             const result = readTransactionForm(e.currentTarget);
             if (!result.valid) {
-                alert(result.errors[0]);
+                showToast(result.errors[0], 'error');
                 return;
             }
             addTransaction(result.data);
             closeModal();
+            showToast('Transaction added', 'success');
         });
     
         document.querySelectorAll('.filter-btn').forEach(btn => {
