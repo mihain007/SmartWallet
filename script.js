@@ -38,7 +38,11 @@
     // ---------- State ----------
     const state = {
         transactions: [],
-        filter: 'all'
+        filter: 'all',
+        charts: {
+            expense: null,
+            incomeExpense: null
+        }
     };
 
     // ---------- Storage helpers ----------
@@ -135,6 +139,15 @@
         };
     }
 
+    function computeExpensesByCategory() {
+        const map = {};
+        for (const tx of state.transactions) {
+            if (tx.type !== 'expense') continue;
+            map[tx.category] = (map[tx.category] || 0) + tx.amount;
+        }
+        return map;
+    }
+
     // ---------- Filtering ----------
     function getFilteredTransactions() {
         if (state.filter === 'all') return state.transactions;
@@ -216,6 +229,134 @@
         `;
     }
 
+    // ---------- Rendering: charts ----------
+    function renderCharts() {
+        renderExpenseChart();
+        renderIncomeExpenseChart();
+    }
+
+    function renderExpenseChart() {
+        const ctx = document.getElementById('expenseChart');
+        if (!ctx) return;
+
+        const byCategory = computeExpensesByCategory();
+        const labels = Object.keys(byCategory).map(k => CATEGORY_META[k]?.label || k);
+        const data = Object.values(byCategory);
+        const colors = Object.keys(byCategory).map(k => CATEGORY_META[k]?.color || '#9ca3af');
+
+        state.charts.expense = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels.length ? labels : ['No expenses yet'],
+                datasets: [{
+                    data: data.length ? data : [1],
+                    backgroundColor: colors.length ? colors : ['#e5e7eb'],
+                    borderWidth: 0,
+                    hoverOffset: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 12,
+                            font: { size: 12 }
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (item) => {
+                                if (!data.length) return 'No data';
+                                return `${item.label}: ${formatCurrency(item.parsed)}`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function renderIncomeExpenseChart() {
+        const ctx = document.getElementById('incomeExpenseChart');
+        if (!ctx) return;
+
+        const monthly = computeMonthlySeries();
+
+        state.charts.incomeExpense = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: monthly.labels,
+                datasets: [
+                    {
+                        label: 'Income',
+                        data: monthly.income,
+                        backgroundColor: '#22c55e',
+                        borderRadius: 8,
+                        maxBarThickness: 40
+                    },
+                    {
+                        label: 'Expenses',
+                        data: monthly.expenses,
+                        backgroundColor: '#ef4444',
+                        borderRadius: 8,
+                        maxBarThickness: 40
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' },
+                    tooltip: {
+                        callbacks: {
+                            label: (item) => `${item.dataset.label}: ${formatCurrency(item.parsed.y)}`
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { callback: (v) => formatCurrency(v) }
+                    }
+                }
+            }
+        });
+    }
+
+    function computeMonthlySeries() {
+        const buckets = new Map();
+        const now = new Date();
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            buckets.set(key, {
+                label: d.toLocaleDateString('en-US', { month: 'short' }),
+                income: 0,
+                expenses: 0
+            });
+        }
+        for (const tx of state.transactions) {
+            const d = new Date(tx.date);
+            if (Number.isNaN(d.getTime())) continue;
+            const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            const bucket = buckets.get(key);
+            if (!bucket) continue;
+            if (tx.type === 'income') bucket.income += tx.amount;
+            else bucket.expenses += tx.amount;
+        }
+        const arr = Array.from(buckets.values());
+        return {
+            labels: arr.map(b => b.label),
+            income: arr.map(b => b.income),
+            expenses: arr.map(b => b.expenses)
+        };
+    }
+
     // ---------- Toast notifications ----------
     let toastTimer = null;
     function showToast(message, variant = 'success') {
@@ -244,6 +385,7 @@
     function renderAll() {
         renderBalances();
         renderTransactions();
+        renderCharts();
     }
 
     // ---------- Event binding ----------
