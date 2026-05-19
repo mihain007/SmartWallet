@@ -244,6 +244,10 @@
         const data = Object.values(byCategory);
         const colors = Object.keys(byCategory).map(k => CATEGORY_META[k]?.color || '#9ca3af');
 
+        if (state.charts.expense) {
+            state.charts.expense.destroy();
+        }
+
         state.charts.expense = new Chart(ctx, {
             type: 'doughnut',
             data: {
@@ -285,6 +289,10 @@
         if (!ctx) return;
 
         const monthly = computeMonthlySeries();
+
+        if (state.charts.incomeExpense) {
+            state.charts.incomeExpense.destroy();
+        }
 
         state.charts.incomeExpense = new Chart(ctx, {
             type: 'bar',
