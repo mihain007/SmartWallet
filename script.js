@@ -85,6 +85,7 @@
         const description = form.querySelector('#description').value.trim();
         const amount = parseFloat(form.querySelector('#amount').value);
         const category = form.querySelector('#category').value;
+        const date = form.querySelector('#date').value;
         const typeInput = form.querySelector('input[name="type"]:checked');
         const type = typeInput ? typeInput.value : 'expense';
 
@@ -92,6 +93,7 @@
         if (!description) errors.push('Description is required');
         if (!Number.isFinite(amount) || amount <= 0) errors.push('Amount must be greater than zero');
         if (!category) errors.push('Category is required');
+        if (!date) errors.push('Date is required');
         if (type !== 'income' && type !== 'expense') errors.push('Type is invalid');
 
         return {
@@ -102,7 +104,7 @@
                 description,
                 amount,
                 category,
-                date: new Date().toISOString().slice(0, 10),
+                date,
                 type,
                 createdAt: new Date().toISOString()
             }
@@ -381,6 +383,10 @@
     function openModal() {
         const modal = document.getElementById('transactionModal');
         modal.classList.add('active');
+        const dateInput = document.getElementById('date');
+        if (dateInput && !dateInput.value) {
+            dateInput.value = new Date().toISOString().slice(0, 10);
+        }
         setTimeout(() => document.getElementById('description')?.focus(), 50);
     }
 
