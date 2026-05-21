@@ -8,7 +8,8 @@
 
     // ---------- Constants ----------
     const STORAGE_KEYS = {
-        TRANSACTIONS: 'smartwallet.transactions'
+        TRANSACTIONS: 'smartwallet.transactions',
+        BUDGET: 'smartwallet.budget'
     };
 
     const CATEGORY_META = {
@@ -38,6 +39,7 @@
     // ---------- State ----------
     const state = {
         transactions: [],
+        budget: 0,
         filter: 'all',
         charts: {
             expense: null,
@@ -60,6 +62,20 @@
 
     function saveTransactions() {
         localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(state.transactions));
+    }
+
+    function loadBudget() {
+        const raw = localStorage.getItem(STORAGE_KEYS.BUDGET);
+        const value = parseFloat(raw);
+        return value > 0 ? value : 0;
+    }
+
+    function saveBudget(value) {
+        if (value > 0) {
+            localStorage.setItem(STORAGE_KEYS.BUDGET, String(value));
+        } else {
+            localStorage.removeItem(STORAGE_KEYS.BUDGET);
+        }
     }
 
     // ---------- Formatters ----------
@@ -85,13 +101,15 @@
         const description = form.querySelector('#description').value.trim();
         const amount = parseFloat(form.querySelector('#amount').value);
         const category = form.querySelector('#category').value;
+        const date = form.querySelector('#date').value;
         const typeInput = form.querySelector('input[name="type"]:checked');
         const type = typeInput ? typeInput.value : 'expense';
 
         const errors = [];
         if (!description) errors.push('Description is required');
-        if (!Number.isFinite(amount) || amount <= 0) errors.push('Amount must be greater than zero');
+        if (amount <= 0) errors.push('Amount must be greater than zero');
         if (!category) errors.push('Category is required');
+        if (!date) errors.push('Date is required');
         if (type !== 'income' && type !== 'expense') errors.push('Type is invalid');
 
         return {
@@ -102,7 +120,7 @@
                 description,
                 amount,
                 category,
-                date: new Date().toISOString().slice(0, 10),
+                date,
                 type,
                 createdAt: new Date().toISOString()
             }
@@ -165,6 +183,47 @@
         balanceEl.style.color = balance < 0 ? '#fecaca' : '';
     }
 
+    // ---------- Rendering: budget ----------
+    function renderBudget() {
+        const input = document.getElementById('budgetInput');
+        const subtitle = document.getElementById('budgetSubtitle');
+        const fill = document.getElementById('budgetProgressFill');
+        const spentEl = document.getElementById('budgetSpent');
+        const remainingEl = document.getElementById('budgetRemaining');
+
+        const { expenses } = computeTotals();
+        spentEl.textContent = `${formatCurrency(expenses)} spent`;
+
+        if (state.budget <= 0) {
+            input.value = '';
+            fill.style.width = '0%';
+            fill.classList.remove('warn', 'danger');
+            subtitle.textContent = 'Set a monthly limit to track your spending';
+            remainingEl.textContent = '—';
+            return;
+        }
+
+        input.value = state.budget.toFixed(2);
+        const ratio = expenses / state.budget;
+        const percent = Math.min(100, ratio * 100);
+        fill.style.width = `${percent}%`;
+        fill.classList.toggle('warn', ratio >= 0.75 && ratio < 1);
+        fill.classList.toggle('danger', ratio >= 1);
+
+        const remaining = state.budget - expenses;
+        remainingEl.textContent = remaining >= 0
+            ? `${formatCurrency(remaining)} remaining`
+            : `${formatCurrency(Math.abs(remaining))} over budget`;
+
+        if (ratio >= 1) {
+            subtitle.textContent = `You exceeded your $${state.budget.toFixed(2)} budget`;
+        } else if (ratio >= 0.75) {
+            subtitle.textContent = `You used ${Math.round(percent)}% of your $${state.budget.toFixed(2)} budget`;
+        } else {
+            subtitle.textContent = `Tracking against your $${state.budget.toFixed(2)} monthly budget`;
+        }
+    }
+
     // ---------- Rendering: transactions list ----------
     function renderTransactions() {
         const list = document.getElementById('transactionList');
@@ -208,12 +267,13 @@
         const meta = CATEGORY_META[tx.category] || CATEGORY_META.other;
         const icon = CATEGORY_ICONS[tx.category] || CATEGORY_ICONS.other;
         const sign = tx.type === 'income' ? '+' : '-';
+        const safeDesc = escapeHtml(tx.description);
         return `
             <div class="transaction-item" data-id="${tx.id}">
                 <div class="transaction-info">
                     <div class="transaction-icon ${tx.type}">${icon}</div>
                     <div class="transaction-details">
-                        <h4>${tx.description}</h4>
+                        <h4>${safeDesc}</h4>
                         <p>${meta.label} · ${formatDate(tx.date)}</p>
                     </div>
                 </div>
@@ -227,6 +287,12 @@
                 </div>
             </div>
         `;
+    }
+
+    function escapeHtml(str) {
+        return String(str).replace(/[&<>"']/g, ch => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[ch]);
     }
 
     // ---------- Rendering: charts ----------
@@ -381,6 +447,10 @@
     function openModal() {
         const modal = document.getElementById('transactionModal');
         modal.classList.add('active');
+        const dateInput = document.getElementById('date');
+        if (dateInput && !dateInput.value) {
+            dateInput.value = new Date().toISOString().slice(0, 10);
+        }
         setTimeout(() => document.getElementById('description')?.focus(), 50);
     }
 
@@ -392,6 +462,7 @@
     // ---------- Top-level render ----------
     function renderAll() {
         renderBalances();
+        renderBudget();
         renderTransactions();
         renderCharts();
     }
@@ -420,7 +491,7 @@
             closeModal();
             showToast('Transaction added', 'success');
         });
-    
+
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -428,6 +499,28 @@
                 state.filter = btn.getAttribute('data-filter') || 'all';
                 renderTransactions();
             });
+        });
+
+        document.getElementById('saveBudgetBtn').addEventListener('click', () => {
+            const input = document.getElementById('budgetInput');
+            const value = parseFloat(input.value);
+            if (value <= 0) {
+                showToast('Enter a valid budget amount', 'error');
+                return;
+            }
+            state.budget = value;
+            saveBudget(value);
+            renderBudget();
+            showToast('Budget saved', 'success');
+        });
+
+        document.getElementById('resetBudgetBtn').addEventListener('click', () => {
+            if (state.budget <= 0) return;
+            if (!confirm('Reset your monthly budget?')) return;
+            state.budget = 0;
+            saveBudget(0);
+            renderBudget();
+            showToast('Budget cleared', 'success');
         });
     }
 
