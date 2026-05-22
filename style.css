@@ -726,6 +726,39 @@ body {
     box-shadow: 0 10px 20px rgba(34, 197, 94, 0.3);
 }
 
+/* Toast */
+.toast {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(120%);
+    background: var(--bg-card-dark);
+    color: var(--text-white);
+    padding: 0.875rem 1.5rem;
+    border-radius: 0.75rem;
+    box-shadow: var(--shadow-xl);
+    font-weight: 600;
+    z-index: 3000;
+    opacity: 0;
+    transition: transform 0.35s ease, opacity 0.35s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    max-width: 90vw;
+    text-align: center;
+}
+
+.toast.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+.toast.success {
+    background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+}
+
+.toast.error {
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .navbar-container {
@@ -795,25 +828,5 @@ body {
 
     .chart-container {
         height: 200px;
-    }
-}
-
-/* Focus states */
-.filter-btn:focus-visible,
-.btn-primary:focus-visible,
-.delete-btn:focus-visible {
-    outline: 2px solid var(--primary);
-    outline-offset: 2px;
-}
-
-/* Accessibility */
-@media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-        scroll-behavior: auto !important;
     }
 }
