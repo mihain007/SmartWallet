@@ -830,3 +830,11 @@ body {
         height: 200px;
     }
 }
+
+/* Focus states */
+.filter-btn:focus-visible,
+.btn-primary:focus-visible,
+.delete-btn:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
