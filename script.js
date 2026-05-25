@@ -67,7 +67,7 @@
     function loadBudget() {
         const raw = localStorage.getItem(STORAGE_KEYS.BUDGET);
         const value = parseFloat(raw);
-        return value > 0 ? value : 0;
+        return Number.isFinite(value) && value > 0 ? value : 0;
     }
 
     function saveBudget(value) {
@@ -107,7 +107,7 @@
 
         const errors = [];
         if (!description) errors.push('Description is required');
-        if (amount <= 0) errors.push('Amount must be greater than zero');
+        if (!Number.isFinite(amount) || amount <= 0) errors.push('Amount must be greater than zero');
         if (!category) errors.push('Category is required');
         if (!date) errors.push('Date is required');
         if (type !== 'income' && type !== 'expense') errors.push('Type is invalid');
@@ -504,7 +504,7 @@
         document.getElementById('saveBudgetBtn').addEventListener('click', () => {
             const input = document.getElementById('budgetInput');
             const value = parseFloat(input.value);
-            if (value <= 0) {
+            if (!Number.isFinite(value) || value <= 0) {
                 showToast('Enter a valid budget amount', 'error');
                 return;
             }
