@@ -1,21 +1,21 @@
-# SmartWallet
+# SmartWallet — Personal Finance Dashboard
 
-Aplicație web pentru gestionarea finanțelor personale, dezvoltată în cadrul practicii de vară la ASEM.
+A minimalist client-side web application for personal finance tracking, built as part of the summer internship at ASEM.
 
-## Funcționalități planificate
+## Features
 
-- Adăugarea tranzacțiilor (venit / cheltuială)
-- Calcularea balanței totale
-- Vizualizare grafică cu Chart.js
-- Stocare locală în browser (`localStorage`)
+- Record income and expense transactions
+- Real-time balance calculation
+- Local persistence via `localStorage`
+- Responsive UI
 
-## Tehnologii
+## Tech Stack
 
-- HTML5, CSS3, JavaScript
-- Chart.js
-- GitHub Pages
+- HTML5, CSS3, vanilla JavaScript (ES6+)
+- [Chart.js](https://www.chartjs.org/) for data visualization
+- GitHub Pages for deployment
 
-## Echipa
+## Team
 
-- Fediuc Vadim
-- Cheptene Mihai
+- **Fediuc Vadim** — application logic, project organization
+- **Cheptene Mihai** — frontend visualizations, charts, QA
